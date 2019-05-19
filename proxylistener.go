@@ -1,4 +1,4 @@
-package proxylistener // import "github.com/anisse/proxylistener"
+package proxylistener // import "github.com/bmanojlovic/proxylistener"
 
 import (
 	"bufio"
