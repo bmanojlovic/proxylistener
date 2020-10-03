@@ -6,6 +6,7 @@ import (
 	"time"
 
 	proxyproto "github.com/pires/go-proxyproto"
+	"github.com/rs/zerolog/log"
 )
 
 type proxyListener struct {
@@ -13,9 +14,10 @@ type proxyListener struct {
 }
 
 type proxyConn struct {
-	c net.Conn
-	h *proxyproto.Header
-	r *bufio.Reader
+	c  net.Conn
+	h  *proxyproto.Header
+	r  *bufio.Reader
+	ra net.Addr
 }
 
 func Listen(network, address string) (net.Listener, error) {
@@ -40,15 +42,19 @@ func (p *proxyListener) Accept() (net.Conn, error) {
 		return nil, err
 	}
 	r := bufio.NewReader(conn)
-
+	slog := log.With().Str("module", "proxylistener").Str("phase", "accept").Logger()
+	slog.Debug().Msg(conn.RemoteAddr().String())
+	ra := conn.RemoteAddr()
 	h, err := proxyproto.Read(r)
 	if err != nil {
 		return nil, err
 	}
-	return &proxyConn{conn, h, r}, nil
+	return &proxyConn{conn, h, r, ra}, nil
 }
 
 // Functions below are "just" wrapped
+
+func (c *proxyConn) ProxyAddress() net.Addr { return c.ra }
 
 func (p *proxyListener) Close() error   { return p.l.Close() }
 func (p *proxyListener) Addr() net.Addr { return p.l.Addr() }
